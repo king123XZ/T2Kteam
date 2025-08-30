@@ -18,13 +18,11 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const {useState, useMemo} = React;
+    const {useState, useMemo, useEffect} = React;
 
-    // Stubs: motion y Helmet para no requerir paquetes
+    // Stubs simples para no depender de paquetes
     const motion = new Proxy({}, { get: () => (props) => <div {...props} /> });
     const Helmet = ({children}) => null;
-
-    // Stubs de íconos (usa spans simples)
     const Icon = ({className, children}) => <span className={className}>{children||"★"}</span>;
     const Trophy = (p)=> <Icon {...p}>🏆</Icon>;
     const CalendarDays = (p)=> <Icon {...p}>📅</Icon>;
@@ -43,6 +41,7 @@
     const Crown = (p)=> <Icon {...p}>👑</Icon>;
     const Filter = (p)=> <Icon {...p}>⚙️</Icon>;
 
+    // ====== CONFIG ======
     const BRAND = "T2K Team";
     const TAGLINE = "Mobile Legends: Bang Bang";
     const WHATSAPP = "https://wa.me/51907376960";
@@ -68,6 +67,7 @@
       results: "Resultados", clips: "Clips", sponsors: "Sponsors", about: "Nosotros", contact: "Contacto",
     };
 
+    // ====== Helpers ======
     function flagEmoji(cc) {
       if (!cc) return "";
       const up = cc.trim().toUpperCase();
@@ -79,6 +79,7 @@
       return clean || "home";
     };
 
+    // ====== Datos demo (cámbialos a tu gusto) ======
     const IMG = [
       "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1536129808005-fae894214c1b?q=80&w=1200&auto=format&fit=crop",
@@ -136,8 +137,17 @@
       return (
         <div className="group rounded-2xl overflow-hidden bg-neutral-900/60 ring-1 ring-white/10 hover:ring-cyan-400/50 hover:shadow-cyan-500/20 hover:shadow-2xl">
           <div className="aspect-[4/5] overflow-hidden relative">
-            <img src={p.img} alt={p.ign} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
-            {badge && (<span className="absolute top-3 left-3 text-xs px-2 py-1 rounded-full bg-cyan-600/80 text-white backdrop-blur border border-cyan-300/40">{badge}</span>)}
+            <img
+              src={p.img}
+              alt={p.ign}
+              loading="lazy"
+              decoding="async"
+              sizes="(min-width:1280px) 20vw, (min-width:1024px) 25vw, (min-width:640px) 45vw, 90vw"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            />
+            {badge && (
+              <span className="absolute top-3 left-3 text-xs px-2 py-1 rounded-full bg-cyan-600/80 text-white backdrop-blur border border-cyan-300/40">{badge}</span>
+            )}
           </div>
           <div className="p-4">
             <div className="flex items-center justify-between gap-2">
@@ -183,7 +193,14 @@
             </div>
             <div className="relative">
               <div className="aspect-video rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
-                <img src={BANNER_URL} alt="T2K Team" loading="eager" className="h-full w-full object-cover"/>
+                <img
+                  src={BANNER_URL}
+                  alt="T2K Team"
+                  loading="eager"
+                  decoding="async"
+                  sizes="(min-width: 768px) 50vw, 100vw"
+                  className="h-full w-full object-cover"
+                />
               </div>
               <div className="absolute -bottom-6 -left-6 bg-cyan-500/20 backdrop-blur border border-cyan-400/40 text-cyan-200 px-4 py-2 rounded-xl shadow">#WeAreT2K</div>
             </div>
@@ -282,7 +299,7 @@
               {CLIPS.map((c) => (
                 <a key={c.url} href={c.url} target="_blank" className="group rounded-2xl overflow-hidden bg-neutral-900/60 ring-1 ring-white/10 hover:ring-cyan-400/50">
                   <div className="aspect-video overflow-hidden">
-                    <img src={c.thumb} alt={c.title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
+                    <img src={c.thumb} alt={c.title} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
                   </div>
                   <div className="p-3 text-sm text-neutral-200 group-hover:text-white">{c.title}</div>
                 </a>
@@ -301,7 +318,7 @@
             <div className="grid sm:grid-cols-3 gap-6 items-center">
               {SPONSORS.map((s) => (
                 <a key={s.name} href={s.url} target="_blank" className="rounded-2xl bg-neutral-900/60 ring-1 ring-white/10 hover:ring-cyan-400/50 p-6 flex items-center justify-center">
-                  <img src={s.logo} alt={s.name} loading="lazy" className="max-h-12 object-contain"/>
+                  <img src={s.logo} alt={s.name} loading="lazy" decoding="async" className="max-h-12 object-contain"/>
                 </a>
               ))}
             </div>
@@ -325,7 +342,7 @@
               </ul>
             </div>
             <div className="rounded-3xl overflow-hidden ring-1 ring-white/10">
-              <img src="https://images.unsplash.com/photo-1514790193030-c89d266d5a9d?q=80&w=1600&auto=format&fit=crop" alt="Team room" loading="lazy" className="w-full h-full object-cover"/>
+              <img src="https://images.unsplash.com/photo-1514790193030-c89d266d5a9d?q=80&w=1600&auto=format&fit=crop" alt="Team room" loading="lazy" decoding="async" className="w-full h-full object-cover"/>
             </div>
           </div>
         </section>
@@ -368,11 +385,20 @@
       const [name, setName] = useState("");
       const [roleFilter, setRoleFilter] = useState("Todos");
       const [route, setRoute] = useState(routeFromHash());
+      const [menuOpen, setMenuOpen] = useState(false); // menú móvil
+
+      // Sincroniza navegación con botón atrás/adelante del navegador
+      useEffect(() => {
+        const onHash = () => setRoute(routeFromHash());
+        window.addEventListener("hashchange", onHash);
+        return () => window.removeEventListener("hashchange", onHash);
+      }, []);
 
       const go = (path) => {
         if (!path.startsWith("/")) path = "/" + path;
         window.location.hash = path;
         setRoute(routeFromHash());
+        setMenuOpen(false);
       };
       (function devTests(){
         const sample = "#/roster".replace(/^#\/?/, "");
@@ -391,41 +417,33 @@
 
       const renderPage = () => {
         switch (PAGE) {
-          case "home":
-            return <HomePage onGoRoster={() => go("/roster")} />;
-          case "roster":
-            return <RosterPage />;
-          case "caldera":
-            return <CalderaPage roleFilter={roleFilter} setRoleFilter={setRoleFilter} />;
-          case "matches":
-            return <MatchesPage />;
-          case "results":
-            return <ResultsPage />;
-          case "clips":
-            return <ClipsPage />;
-          case "sponsors":
-            return <SponsorsPage />;
-          case "about":
-            return <AboutPage />;
-          case "contact":
-            return <ContactPage
+          case "home": return <HomePage onGoRoster={() => go("/roster")} />;
+          case "roster": return <RosterPage />;
+          case "caldera": return <CalderaPage roleFilter={roleFilter} setRoleFilter={setRoleFilter} />;
+          case "matches": return <MatchesPage />;
+          case "results": return <ResultsPage />;
+          case "clips": return <ClipsPage />;
+          case "sponsors": return <SponsorsPage />;
+          case "about": return <AboutPage />;
+          case "contact": return <ContactPage
               email={email} setEmail={setEmail}
               msg={msg} setMsg={setMsg}
               name={name} setName={setName}
               onSubmit={onSubmit}
             />;
-          default:
-            return <HomePage onGoRoster={() => go("/roster")} />;
+          default: return <HomePage onGoRoster={() => go("/roster")} />;
         }
       };
 
       return (
         <div className="min-h-screen relative bg-neutral-950 text-neutral-100">
+          {/* Fondo neon */}
           <div className="pointer-events-none fixed inset-0 -z-10">
             <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[80vw] h-[50vh] bg-[radial-gradient(closest-side,rgba(34,211,238,0.25),transparent)] blur-2xl" />
             <div className="absolute -bottom-20 left-1/3 w-[70vw] h-[50vh] bg-[radial-gradient(closest-side,rgba(168,85,247,0.20),transparent)] blur-2xl" />
           </div>
 
+          {/* NAVBAR */}
           <header className="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-neutral-900/60 bg-neutral-900/80 border-b border-cyan-400/20">
             <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
               <button onClick={() => go("/home")} className="flex items-center gap-2">
@@ -434,6 +452,8 @@
                   <span className="text-cyan-400">T2K</span> <span className="text-neutral-300">Team</span>
                 </span>
               </button>
+
+              {/* Desktop nav */}
               <nav className="hidden md:flex gap-6 text-sm">
                 {NAV.map((n) => (
                   <a key={n.href} href={`#${n.href}`} onClick={(e)=>{e.preventDefault(); go(n.href);}}
@@ -442,10 +462,43 @@
                   </a>
                 ))}
               </nav>
+
+              {/* CTA desktop */}
               <div className="hidden md:flex items-center gap-2">
                 <a href={WHATSAPP} target="_blank" className="px-4 py-2 rounded-xl bg-cyan-500/90 hover:bg-cyan-400 transition font-medium ring-1 ring-cyan-300/30 shadow-[0_0_24px_rgba(34,211,238,0.45)]">Unirte</a>
               </div>
+
+              {/* Botón menú móvil */}
+              <button
+                className="md:hidden px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20"
+                aria-label="Abrir menú"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen(v => !v)}
+              >
+                ☰
+              </button>
             </div>
+
+            {/* Menú móvil */}
+            {menuOpen && (
+              <nav className="md:hidden border-t border-white/10 bg-neutral-900/95 backdrop-blur">
+                <div className="max-w-6xl mx-auto px-4 py-3 grid gap-2">
+                  {NAV.map(n => (
+                    <a
+                      key={n.href}
+                      href={`#${n.href}`}
+                      onClick={(e) => { e.preventDefault(); go(n.href); }}
+                      className="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-white/10"
+                    >
+                      {n.label}
+                    </a>
+                  ))}
+                  <a href={WHATSAPP} target="_blank" className="mt-2 inline-block px-4 py-2 rounded-xl bg-cyan-500/90 hover:bg-cyan-400 text-sm text-white">Unirte</a>
+                </div>
+              </nav>
+            )}
+
+            {/* Social bar */}
             <div className="border-t border-white/5">
               <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-4 text-sm text-neutral-300">
                 <a href={DISCORD} target="_blank" className="inline-flex items-center gap-2 hover:text-white"><MessageCircle className="h-4 w-4"/>Discord</a>
@@ -456,8 +509,10 @@
             </div>
           </header>
 
+          {/* CONTENIDO */}
           <main>{renderPage()}</main>
 
+          {/* FOOTER */}
           <footer className="py-10 border-t border-white/10">
             <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
               <p className="text-neutral-400">© {new Date().getFullYear()} {BRAND} — {TAGLINE}</p>
