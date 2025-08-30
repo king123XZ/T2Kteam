@@ -1,0 +1,581 @@
+import { useState, useMemo } from "react";
+import { Helmet } from "react-helmet";
+import { motion } from "framer-motion";
+import {
+  Trophy,
+  CalendarDays,
+  Users,
+  Gamepad2,
+  Mail,
+  Send,
+  Play,
+  Sparkles,
+  Youtube,
+  Twitch,
+  Phone,
+  MessageCircle,
+  Shield,
+  Flag,
+  Crown,
+  Filter,
+} from "lucide-react";
+
+// ================= EDITA ESTOS DATOS =================
+const BRAND = "T2K Team";
+const TAGLINE = "Mobile Legends: Bang Bang";
+const WHATSAPP = "https://wa.me/51907376960"; // cambia por tu contacto
+const DISCORD = "https://discord.com/invite/tu-invite"; // opcional
+const YOUTUBE = "https://youtube.com/@t2kteam"; // opcional
+const TWITCH = "https://twitch.tv/t2kteam"; // opcional
+// Imágenes de marca
+const BANNER_URL = "https://i.postimg.cc/pLmHqZvm/banner.png"; // banner principal
+const LOGO_URL = "https://i.postimg.cc/fR1hF9WB/logo-png.png"; // logo PNG
+
+// Rutas tipo SPA con hash, ejemplo: #/roster
+const NAV = [
+  { label: "Inicio", href: "/home" },
+  { label: "Roster", href: "/roster" },
+  { label: "Caldera", href: "/caldera" },
+  { label: "Partidos", href: "/matches" },
+  { label: "Resultados", href: "/results" },
+  { label: "Clips", href: "/clips" },
+  { label: "Sponsors", href: "/sponsors" },
+  { label: "Nosotros", href: "/about" },
+  { label: "Contacto", href: "/contact" },
+];
+const PAGE_TITLES = {
+  home: "Inicio",
+  roster: "Roster",
+  caldera: "Caldera",
+  matches: "Partidos",
+  results: "Resultados",
+  clips: "Clips",
+  sponsors: "Sponsors",
+  about: "Nosotros",
+  contact: "Contacto",
+};
+
+// ===== Helpers =====
+function flagEmoji(cc) {
+  if (!cc) return "";
+  const up = cc.trim().toUpperCase();
+  return up.replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt()));
+}
+const routeFromHash = () => {
+  const raw = (typeof window !== "undefined" ? window.location.hash : "") || "";
+  const clean = raw.replace(/^#\/?/, "");
+  return clean || "home";
+};
+
+// Datos base para ejemplo (cámbialos por tus jugadores)
+const IMG = [
+  "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1536129808005-fae894214c1b?q=80&w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1549921296-3b4a7a5a2f37?q=80&w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1520975693416-35a1dc2f9b86?q=80&w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1514790193030-c89d266d5a9d?q=80&w=1200&auto=format&fit=crop",
+];
+
+const ROLES = ["Jungla", "Mid", "EXP", "Gold", "Roam"];
+
+// ======= ROSTER COMPETITIVO (10) =======
+// Cada jugador admite heroImg (URL del héroe favorito)
+const ROSTER = [
+  { ign: "T2K•Shadow", name: "Luis", role: "Jungla", heroes: ["Ling", "Hayabusa", "Benedetta"], number: 7, img: IMG[0], heroImg: "https://images.unsplash.com/photo-1606112219348-204d7d8b94ee?q=80&w=400&auto=format&fit=crop", cc: "PE", age: 19, peak: "Mítico Glorioso", status: "Starter" },
+  { ign: "T2K•Nova", name: "Ariel", role: "Mid", heroes: ["Yve", "Lylia", "Natalia"], number: 10, img: IMG[1], heroImg: "https://images.unsplash.com/photo-1549923746-c502d488b3ea?q=80&w=400&auto=format&fit=crop", cc: "PE", age: 18, peak: "Mítico", status: "Starter" },
+  { ign: "T2K•Aegis", name: "Bruno", role: "EXP", heroes: ["Paquito", "Yu Zhong", "Terizla"], number: 23, img: IMG[2], heroImg: "https://images.unsplash.com/photo-1542751110-97427bbecf20?q=80&w=400&auto=format&fit=crop", cc: "AR", age: 20, peak: "Mítico", status: "Starter" },
+  { ign: "T2K•Blaze", name: "Mateo", role: "Gold", heroes: ["Karrie", "Brody", "Melissa"], number: 99, img: IMG[3], heroImg: "https://images.unsplash.com/photo-1535223289827-42f1e9919769?q=80&w=400&auto=format&fit=crop", cc: "CL", age: 21, peak: "Mítico", status: "Starter" },
+  { ign: "T2K•Atlas", name: "Sergio", role: "Roam", heroes: ["Atlas", "Tigreal", "Khufra"], number: 5, img: IMG[4], heroImg: "https://images.unsplash.com/photo-1520975594089-8dba109a5fc9?q=80&w=400&auto=format&fit=crop", cc: "CO", age: 22, peak: "Leyenda", status: "Starter" },
+  { ign: "T2K•Volt", name: "Diego", role: "Gold", heroes: ["Bruno", "Miya", "Beatrix"], number: 3, img: IMG[5], heroImg: "https://images.unsplash.com/photo-1542751371-5bf1806a08a0?q=80&w=400&auto=format&fit=crop", cc: "MX", age: 18, peak: "Mítico", status: "Sub" },
+  { ign: "T2K•Lotus", name: "Nico", role: "Mid", heroes: ["Valentina", "Xavier", "Novaria"], number: 12, img: IMG[0], heroImg: "https://images.unsplash.com/photo-1573865526739-10659fec78a5?q=80&w=400&auto=format&fit=crop", cc: "UY", age: 19, peak: "Mítico", status: "Sub" },
+  { ign: "T2K•Rex", name: "Pablo", role: "EXP", heroes: ["Dyrroth", "Aldous", "Yu Zhong"], number: 8, img: IMG[1], heroImg: "https://images.unsplash.com/photo-1542751110-97427bbecf20?q=80&w=400&auto=format&fit=crop", cc: "EC", age: 20, peak: "Leyenda", status: "Sub" },
+  { ign: "T2K•Ghost", name: "Hugo", role: "Jungla", heroes: ["Baxia", "Nolan", "Fredrinn"], number: 14, img: IMG[2], heroImg: "https://images.unsplash.com/photo-1549921296-3b4a7a5a2f37?q=80&w=400&auto=format&fit=crop", cc: "VE", age: 17, peak: "Mítico", status: "Sub" },
+  { ign: "T2K•Ward", name: "Leo", role: "Roam", heroes: ["Grock", "Khufra", "Minsitthar"], number: 1, img: IMG[3], heroImg: "https://images.unsplash.com/photo-1536129808005-fae894214c1b?q=80&w=400&auto=format&fit=crop", cc: "BO", age: 23, peak: "Épico", status: "Sub" },
+];
+
+// ======= CALDERA (lista extendida ~15) =======
+const CALDERA = [
+  ...ROSTER,
+  { ign: "T2K•Zeta", name: "Kevin", role: "Gold", heroes: ["Lesley", "Bruno", "Beatrix"], number: 17, img: IMG[4], heroImg: "https://images.unsplash.com/photo-1549923746-c502d488b3ea?q=80&w=400&auto=format&fit=crop", cc: "PY", age: 18, peak: "Leyenda" },
+  { ign: "T2K•Nyx", name: "Pedro", role: "Mid", heroes: ["Cyclops", "Lunox", "Valentina"], number: 25, img: IMG[5], heroImg: "https://images.unsplash.com/photo-1549921296-3b4a7a5a2f37?q=80&w=400&auto=format&fit=crop", cc: "PE", age: 16, peak: "Épico" },
+  { ign: "T2K•Ragnar", name: "Jorge", role: "EXP", heroes: ["Terizla", "Thamuz", "Balmond"], number: 30, img: IMG[0], heroImg: "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=400&auto=format&fit=crop", cc: "CO", age: 24, peak: "Mítico" },
+  { ign: "T2K•Kirin", name: "Sebas", role: "Jungla", heroes: ["Lancelot", "Ling", "Nolan"], number: 55, img: IMG[1], heroImg: "https://images.unsplash.com/photo-1535223289827-42f1e9919769?q=80&w=400&auto=format&fit=crop", cc: "AR", age: 20, peak: "Mítico" },
+  { ign: "T2K•Orion", name: "Raúl", role: "Roam", heroes: ["Atlas", "Grock", "Angela"], number: 41, img: IMG[2], heroImg: "https://images.unsplash.com/photo-1520975594089-8dba109a5fc9?q=80&w=400&auto=format&fit=crop", cc: "CL", age: 22, peak: "Leyenda" },
+];
+
+const MATCHES = [
+  { when: "Sáb, 6 Sep — 20:00", vs: "Eclipse Esports", type: "Amistoso BO3", stream: "https://youtube.com" },
+  { when: "Dom, 14 Sep — 18:30", vs: "Rift Masters", type: "Liga Comunitaria", stream: "https://twitch.tv" },
+  { when: "Vie, 26 Sep — 21:00", vs: "Nebula ML", type: "Scrim", stream: "https://kick.com" },
+];
+
+const RESULTS = [
+  { date: "24 Ago 2025", opp: "Orion Esports", score: "2–1", result: "W", mvp: "T2K•Shadow", vod: "https://youtube.com" },
+  { date: "17 Ago 2025", opp: "Delta Five", score: "0–2", result: "L", mvp: "T2K•Atlas", vod: "https://youtube.com" },
+  { date: "10 Ago 2025", opp: "Aquila", score: "2–0", result: "W", mvp: "T2K•Blaze", vod: "https://youtube.com" },
+];
+
+const CLIPS = [
+  { title: "Ace minuto 12", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", thumb: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg" },
+  { title: "Macro perfecto en Lord", url: "https://www.youtube.com/watch?v=ysz5S6PUM-U", thumb: "https://img.youtube.com/vi/ysz5S6PUM-U/hqdefault.jpg" },
+  { title: "Pickoff doble invisible", url: "https://www.youtube.com/watch?v=f02mOEt11OQ", thumb: "https://img.youtube.com/vi/f02mOEt11OQ/hqdefault.jpg" },
+];
+
+const SPONSORS = [
+  { name: "NovaGear", url: "https://example.com", logo: "https://dummyimage.com/240x80/1f2937/ffffff&text=NovaGear" },
+  { name: "AimFuel", url: "https://example.com", logo: "https://dummyimage.com/240x80/111827/ffffff&text=AimFuel" },
+  { name: "FiberNet", url: "https://example.com", logo: "https://dummyimage.com/240x80/0b0f19/ffffff&text=FiberNet" },
+];
+
+// ====== UI: tarjetas ======
+function PlayerCard({ p, badge }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.35 }}
+      className="group rounded-2xl overflow-hidden bg-neutral-900/60 ring-1 ring-white/10 hover:ring-cyan-400/50 hover:shadow-cyan-500/20 hover:shadow-2xl"
+    >
+      <div className="aspect-[4/5] overflow-hidden relative">
+        <img
+          src={p.img}
+          alt={p.ign}
+          loading="lazy"
+          decoding="async"
+          sizes="(min-width:1280px) 20vw, (min-width:1024px) 25vw, (min-width:640px) 45vw, 90vw"
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+        />
+        {badge && (
+          <span className="absolute top-3 left-3 text-xs px-2 py-1 rounded-full bg-cyan-600/80 text-white backdrop-blur border border-cyan-300/40">
+            {badge}
+          </span>
+        )}
+        {p.heroImg && (
+          <motion.img
+            src={p.heroImg}
+            alt={`${p.ign} hero`}
+            loading="lazy"
+            decoding="async"
+            initial={{ y: 0 }}
+            animate={{ y: [0, -3, 0] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-3 right-3 h-12 w-12 rounded-full ring-2 ring-cyan-300/60 shadow-[0_0_18px_rgba(34,211,238,0.55)] object-cover"
+          />
+        )}
+      </div>
+      <div className="p-4">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-extrabold text-white truncate">{p.ign}</h3>
+          {p.number != null && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-neutral-200">#{p.number}</span>
+          )}
+        </div>
+        <p className="text-sm text-neutral-300 mt-1">
+          {p.name} • {p.role}
+        </p>
+        <div className="mt-2 flex items-center gap-2 text-xs text-neutral-400">
+          <span className="inline-flex items-center gap-1">
+            <Flag className="h-3.5 w-3.5" />
+            {flagEmoji(p.cc)} {p.cc}
+          </span>
+          <span>• {p.age} años</span>
+          <span>• Pico: {p.peak}</span>
+        </div>
+        {Array.isArray(p.heroes) && p.heroes.length > 0 && (
+          <div className="mt-3 text-xs text-neutral-400 flex flex-wrap gap-2">
+            {p.heroes.map((h) => (
+              <span key={h} className="px-2 py-1 rounded-full bg-white/5 ring-1 ring-white/10">
+                {h}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// =================== PÁGINAS ===================
+function HomePage({ onGoRoster }) {
+  return (
+    <section className="relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_0%,rgba(34,211,238,0.30)_0%,rgba(217,70,239,0)_60%)]" />
+      <div className="max-w-6xl mx-auto px-4 pt-14 pb-16 grid md:grid-cols-2 gap-8 items-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          <h1 className="text-4xl md:text-6xl font-extrabold leading-tight">
+            <span className="text-white">{BRAND}</span>
+            <span className="block bg-clip-text text-transparent bg-[linear-gradient(90deg,#22d3ee_0%,#a855f7_60%,#22d3ee_100%)] drop-shadow-[0_0_10px_rgba(34,211,238,0.6)]">{TAGLINE}</span>
+          </h1>
+          <p className="mt-4 text-neutral-300 max-w-prose">Roster competitivo de 10 jugadores y caldera ampliada de talento. Scrims, análisis y objetivos claros.</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a href={WHATSAPP} target="_blank" className="px-5 py-3 rounded-xl bg-cyan-500/90 hover:bg-cyan-400 transition font-semibold ring-1 ring-cyan-300/30 shadow-[0_0_24px_rgba(34,211,238,0.45)]">Postular</a>
+            <button onClick={onGoRoster} className="px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition font-semibold">Ver roster</button>
+          </div>
+          <div className="mt-6 flex items-center gap-4 text-sm text-neutral-400">
+            <div className="flex items-center gap-2"><Users className="h-4 w-4"/> 10 titulares</div>
+            <div className="flex items-center gap-2"><Gamepad2 className="h-4 w-4"/> Entrenos 5x5</div>
+            <div className="flex items-center gap-2"><CalendarDays className="h-4 w-4"/> Calendario semanal</div>
+          </div>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.05 }} className="relative">
+          <div className="aspect-video rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
+            <img
+              src={BANNER_URL}
+              alt="T2K Team"
+              loading="eager"
+              decoding="async"
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div className="absolute -bottom-6 -left-6 bg-cyan-500/20 backdrop-blur border border-cyan-400/40 text-cyan-200 px-4 py-2 rounded-xl shadow">#WeAreT2K</div>
+        </motion.div>
+      </div>
+      <a href={WHATSAPP} target="_blank" className="fixed right-4 bottom-4 z-40 px-4 py-3 rounded-2xl bg-cyan-600/90 hover:bg-cyan-500 shadow-xl ring-1 ring-cyan-300/30 shadow-[0_0_28px_rgba(34,211,238,0.5)]">Unirte por WhatsApp</a>
+    </section>
+  );
+}
+
+function RosterPage() {
+  return (
+    <section className="py-14">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex items-center gap-3 mb-6"><Crown className="h-5 w-5 text-cyan-400"/><h2 className="text-2xl md:text-3xl font-bold">Roster competitivo (10)</h2></div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+          {ROSTER.map((p) => (<PlayerCard key={p.ign} p={p} badge={p.status === 'Starter' ? 'Titular' : 'Suplente'} />))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CalderaPage({ roleFilter, setRoleFilter }) {
+  const calderaFiltered = useMemo(() => {
+    if (roleFilter === 'Todos') return CALDERA;
+    return CALDERA.filter((p) => p.role === roleFilter);
+  }, [roleFilter]);
+  return (
+    <section className="py-14">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3"><Users className="h-5 w-5 text-cyan-400"/><h2 className="text-2xl md:text-3xl font-bold">Caldera (lista completa)</h2></div>
+          <div className="flex items-center gap-2 text-sm text-neutral-300">
+            <Filter className="h-4 w-4"/>
+            <label className="hidden sm:block">Filtrar por rol:</label>
+            <select value={roleFilter} onChange={(e)=>setRoleFilter(e.target.value)} className="px-3 py-2 rounded-xl bg-neutral-950 border border-white/10">
+              {['Todos', ...ROLES].map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+          {calderaFiltered.map((p) => (<PlayerCard key={p.ign+'-caldera'} p={p} />))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MatchesPage() {
+  return (
+    <section className="py-14">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex items-center gap-3 mb-6"><CalendarDays className="h-5 w-5 text-cyan-400"/><h2 className="text-2xl md:text-3xl font-bold">Próximos partidos</h2></div>
+        <div className="grid md:grid-cols-3 gap-4">
+          {MATCHES.map((m) => (
+            <div key={m.when+m.vs} className="rounded-2xl p-4 bg-neutral-900/60 ring-1 ring-white/10">
+              <div className="text-sm text-cyan-300 font-medium">{m.when}</div>
+              <div className="mt-1 text-lg font-bold">vs {m.vs}</div>
+              <div className="text-sm text-neutral-400">{m.type}</div>
+              <a href={m.stream} target="_blank" className="mt-3 inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20"><Play className="h-4 w-4"/> Ver transmisión</a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ResultsPage() {
+  return (
+    <section className="py-14">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex items-center gap-3 mb-6"><Trophy className="h-5 w-5 text-cyan-400"/><h2 className="text-2xl md:text-3xl font-bold">Resultados recientes</h2></div>
+        <div className="grid md:grid-cols-3 gap-4">
+          {RESULTS.map((r) => (
+            <div key={r.date+r.opp} className="rounded-2xl p-5 bg-neutral-900/60 ring-1 ring-white/10">
+              <div className="text-sm text-neutral-400">{r.date}</div>
+              <div className="mt-1 text-lg font-bold">{r.result === 'W' ? 'Victoria' : 'Derrota'} — {r.score}</div>
+              <div className="text-sm text-neutral-300">vs {r.opp}</div>
+              <div className="mt-2 text-xs text-neutral-400">MVP: {r.mvp}</div>
+              <a href={r.vod} target="_blank" className="mt-3 inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20"><Play className="h-4 w-4"/> Ver VOD</a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ClipsPage() {
+  return (
+    <section className="py-14">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex items-center gap-3 mb-6"><Sparkles className="h-5 w-5 text-cyan-400"/><h2 className="text-2xl md:text-3xl font-bold">Clips</h2></div>
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {CLIPS.map((c) => (
+            <a key={c.url} href={c.url} target="_blank" className="group rounded-2xl overflow-hidden bg-neutral-900/60 ring-1 ring-white/10 hover:ring-cyan-400/50">
+              <div className="aspect-video overflow-hidden">
+                <img src={c.thumb} alt={c.title} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
+              </div>
+              <div className="p-3 text-sm text-neutral-200 group-hover:text-white">{c.title}</div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SponsorsPage() {
+  return (
+    <section className="py-14">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex items-center gap-3 mb-6"><Shield className="h-5 w-5 text-cyan-400"/><h2 className="text-2xl md:text-3xl font-bold">Sponsors & Partners</h2></div>
+        <div className="grid sm:grid-cols-3 gap-6 items-center">
+          {SPONSORS.map((s) => (
+            <a key={s.name} href={s.url} target="_blank" className="rounded-2xl bg-neutral-900/60 ring-1 ring-white/10 hover:ring-cyan-400/50 p-6 flex items-center justify-center">
+              <img src={s.logo} alt={s.name} loading="lazy" decoding="async" className="max-h-12 object-contain"/>
+            </a>
+          ))}
+        </div>
+        <div className="mt-6"><a href="#/contact" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">¿Quieres auspiciar?</a></div>
+      </div>
+    </section>
+  );
+}
+
+function AboutPage() {
+  return (
+    <section className="py-14">
+      <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8 items-start">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold mb-3">Nosotros</h2>
+          <p className="text-neutral-300 leading-relaxed">{BRAND} es un equipo LATAM con enfoque competitivo. Entrenamos 5x5, revisamos VODs y mantenemos un plan de mejora continua. Buscamos constancia, comunicación y respeto.</p>
+          <ul className="mt-4 text-neutral-300 list-disc pl-5 space-y-1">
+            <li>Scrims: Mar, Jue, Sáb (20:00–23:00)</li>
+            <li>Revisión: Dom 19:00</li>
+            <li>Región principal: LATAM Sur</li>
+          </ul>
+        </div>
+        <div className="rounded-3xl overflow-hidden ring-1 ring-white/10">
+          <img src="https://images.unsplash.com/photo-1514790193030-c89d266d5a9d?q=80&w=1600&auto=format&fit=crop" alt="Team room" loading="lazy" decoding="async" className="w-full h-full object-cover"/>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ContactPage({ email, setEmail, msg, setMsg, name, setName, onSubmit }) {
+  return (
+    <section className="py-16">
+      <div className="max-w-3xl mx-auto px-4">
+        <div className="flex items-center gap-3 mb-6"><Mail className="h-5 w-5 text-cyan-400"/><h2 className="text-2xl md:text-3xl font-bold">Contacto / Tryouts</h2></div>
+        <form onSubmit={onSubmit} className="rounded-3xl p-6 bg-neutral-900/60 ring-1 ring-white/10">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="md:col-span-1">
+              <label className="block text-sm text-neutral-300 mb-1">Nombre</label>
+              <input value={name} onChange={(e)=>setName(e.target.value)} type="text" required placeholder="Tu nombre / IGN" className="w-full px-4 py-3 rounded-xl bg-neutral-950 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500"/>
+            </div>
+            <div className="md:col-span-1">
+              <label className="block text-sm text-neutral-300 mb-1">Email</label>
+              <input value={email} onChange={(e)=>setEmail(e.target.value)} type="email" required placeholder="tu@correo.com" className="w-full px-4 py-3 rounded-xl bg-neutral-950 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500"/>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm text-neutral-300 mb-1">Mensaje</label>
+              <textarea value={msg} onChange={(e)=>setMsg(e.target.value)} rows={4} placeholder="Rol, héroes, tier y horarios disponibles" className="w-full px-4 py-3 rounded-xl bg-neutral-950 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button type="submit" className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-cyan-500/90 hover:bg-cyan-400 transition font-semibold"><Send className="h-4 w-4"/> Enviar</button>
+            <a href={WHATSAPP} target="_blank" className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20"><Phone className="h-4 w-4"/> WhatsApp</a>
+          </div>
+        </form>
+      </div>
+    </section>
+  );
+}
+
+// =============== APP PRINCIPAL con router hash ===============
+export default function T2KTeamSite() {
+  // estado general (único)
+  const [email, setEmail] = useState("");
+  const [msg, setMsg] = useState("");
+  const [name, setName] = useState("");
+  const [roleFilter, setRoleFilter] = useState("Todos");
+  const [route, setRoute] = useState(routeFromHash());
+  const [menuOpen, setMenuOpen] = useState(false); // menú móvil
+
+  // navegación
+  const go = (path) => {
+    if (!path.startsWith("/")) path = "/" + path;
+    window.location.hash = path;
+    setRoute(routeFromHash());
+  };
+  // test rápido de parser
+  (function devTests(){
+    const sample = "#/roster".replace(/^#\/?/, "");
+    console.assert(sample === "roster", "Hash parser debe devolver 'roster'");
+  })();
+
+  // envío del formulario
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("https://formspree.io/f/yourid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, message: msg, name }),
+      });
+      if (res.ok) alert("¡Enviado! Te contactaremos pronto.");
+      else alert("No se pudo enviar. Escríbenos por WhatsApp.");
+    } catch {
+      alert("No se pudo enviar. Escríbenos por WhatsApp.");
+    }
+    setEmail("");
+    setMsg("");
+    setName("");
+  };
+
+  // título por página
+  const PAGE = route || "home";
+  const pageTitle = PAGE_TITLES[PAGE] || "Inicio";
+
+  // renderizador
+  const renderPage = () => {
+    switch (PAGE) {
+      case "home":
+        return <HomePage onGoRoster={() => go("/roster")} />;
+      case "roster":
+        return <RosterPage />;
+      case "caldera":
+        return <CalderaPage roleFilter={roleFilter} setRoleFilter={setRoleFilter} />;
+      case "matches":
+        return <MatchesPage />;
+      case "results":
+        return <ResultsPage />;
+      case "clips":
+        return <ClipsPage />;
+      case "sponsors":
+        return <SponsorsPage />;
+      case "about":
+        return <AboutPage />;
+      case "contact":
+        return (
+          <ContactPage
+            email={email}
+            setEmail={setEmail}
+            msg={msg}
+            setMsg={setMsg}
+            name={name}
+            setName={setName}
+            onSubmit={onSubmit}
+          />
+        );
+      default:
+        return <HomePage onGoRoster={() => go("/roster")} />;
+    }
+  };
+
+  return (
+    <div className="min-h-dvh relative bg-neutral-950 text-neutral-100">
+      {/* Neon global background */}
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[80vw] h-[50vh] bg-[radial-gradient(closest-side,rgba(34,211,238,0.25),transparent)] blur-2xl" />
+        <div className="absolute -bottom-20 left-1/3 w-[70vw] h-[50vh] bg-[radial-gradient(closest-side,rgba(168,85,247,0.20),transparent)] blur-2xl" />
+      </div>
+      <Helmet>
+        <title>{`${BRAND} — ${pageTitle}`}</title>
+        <meta name="description" content={`T2K Team — ${pageTitle}`} />
+        <meta property="og:title" content={`${BRAND} — ${pageTitle}`} />
+        <meta property="og:description" content="Roster, caldera, calendario, logros y clips del equipo." />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content={BANNER_URL} />
+        <link rel="icon" type="image/png" href={LOGO_URL} />
+        <link rel="preload" as="image" href={LOGO_URL} />
+      </Helmet>
+
+      {/* NAVBAR */}
+      <header className="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-neutral-900/60 bg-neutral-900/80 border-b border-cyan-400/20">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={() => go("/home")} className="flex items-center gap-2">
+            <img src={LOGO_URL} alt={`${BRAND} logo`} className="h-9 w-9 rounded-lg ring-1 ring-white/10"/>
+            <span className="font-black tracking-wide text-xl">
+              <span className="text-cyan-400">T2K</span> <span className="text-neutral-300">Team</span>
+            </span>
+          </button>
+          <nav className="hidden md:flex gap-6 text-sm">
+            {NAV.map((n) => (
+              <a key={n.href} href={`#${n.href}`} onClick={(e)=>{e.preventDefault(); go(n.href);}}
+                 className={(route === n.href.replace(/^\//,'') ? "text-cyan-300 font-semibold drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]" : "text-neutral-300 hover:text-white") + " transition"}>
+                {n.label}
+              </a>
+            ))}
+          </nav>
+          <div className="hidden md:flex items-center gap-2">
+            <a href={WHATSAPP} target="_blank" className="px-4 py-2 rounded-xl bg-cyan-500/90 hover:bg-cyan-400 transition font-medium ring-1 ring-cyan-300/30 shadow-[0_0_24px_rgba(34,211,238,0.45)]">Unirte</a>
+          </div>
+          {/* Botón menú móvil */}
+          <button
+            className="md:hidden px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20"
+            aria-label="Abrir menú"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(v => !v)}
+          >
+            ☰
+          </button>
+        </div>
+        {/* Menú móvil */}
+        {menuOpen && (
+          <nav className="md:hidden border-t border-white/10 bg-neutral-900/95 backdrop-blur">
+            <div className="max-w-6xl mx-auto px-4 py-3 grid gap-2">
+              {NAV.map(n => (
+                <a
+                  key={n.href}
+                  href={`#${n.href}`}
+                  onClick={(e) => { e.preventDefault(); setMenuOpen(false); go(n.href); }}
+                  className="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-white/10"
+                >
+                  {n.label}
+                </a>
+              ))}
+              <a href={WHATSAPP} target="_blank" className="mt-2 inline-block px-4 py-2 rounded-xl bg-cyan-500/90 hover:bg-cyan-400 text-sm text-white">Unirte</a>
+            </div>
+          </nav>
+        )}
+        {/* Social bar */}
+        <div className="border-t border-white/5">
+          <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-4 text-sm text-neutral-300">
+            <a href={DISCORD} target="_blank" className="inline-flex items-center gap-2 hover:text-white"><MessageCircle className="h-4 w-4"/>Discord</a>
+            <a href={YOUTUBE} target="_blank" className="inline-flex items-center gap-2 hover:text-white"><Youtube className="h-4 w-4"/>YouTube</a>
+            <a href={TWITCH} target="_blank" className="inline-flex items-center gap-2 hover:text-white"><Twitch className="h-4 w-4"/>Twitch</a>
+            <a href={WHATSAPP} target="_blank" className="inline-flex items-center gap-2 hover:text-white"><Phone className="h-4 w-4"/>WhatsApp</a>
+          </div>
+        </div>
+      </header>
+
+      {/* CONTENIDO (cambia por ruta) */}
+      <main>{renderPage()}</main>
+
+      {/* FOOTER */}
+      <footer className="py-10 border-t border-white/10">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-neutral-400">© {new Date().getFullYear()} {BRAND} — {TAGLINE}</p>
+          <div className="text-neutral-400 text-sm">Roster 10 • Caldera 15+ • SEO listo • OG tags • Formspree</div>
+        </div>
+      </footer>
+    </div>
+  );
+}
